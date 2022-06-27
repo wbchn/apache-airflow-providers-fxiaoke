@@ -1,5 +1,5 @@
 import json
-import os
+import pendulum
 from glob import glob
 from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING, Optional, Sequence, Union
@@ -22,9 +22,8 @@ class FxiaokeToGCSOperator(BaseOperator):
         *,
         fxiaoke_object_name,
         fxiaoke_conn_id='fxiaoke_default',
-        start_ms: int = None,
-        end_ms: int = None,
-
+        start_ms: Union[int, str] = None,
+        end_ms: Union[int, str] = None,
         bucket: str,
         filename: str,
         mime_type: str = 'application/json',
@@ -39,8 +38,15 @@ class FxiaokeToGCSOperator(BaseOperator):
 
         self.fxiaoke_object_name = fxiaoke_object_name
         self.fxiaoke_conn_id = fxiaoke_conn_id
-        self.start_ms = start_ms
-        self.end_ms = end_ms
+        if isinstance(start_ms, str):
+            self.start_ms = pendulum.parse(start_ms).int_timestamp()*1000
+        else:
+            self.start_ms = start_ms
+
+        if isinstance(end_ms, str):
+            self.end_ms = pendulum.parse(end_ms).int_timestamp()*1000
+        else:
+            self.end_ms = end_ms
 
         self.bucket = bucket
         self.filename = filename
@@ -90,7 +96,7 @@ class FxiaokeToGCSOperator(BaseOperator):
             self.bucket,
             self.filename,
             tmp_file_handle.name,
-            mime_type=self.file_mime_type,
+            mime_type=file_mime_type,
             gzip=self.gzip,
             metadata=metadata,
         )

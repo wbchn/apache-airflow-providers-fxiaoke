@@ -2,7 +2,7 @@
 ---
 package-name: airflow-provider-fxiaoke
 description: |
-    `Fxiaoke CRM hooks and operators.`__
+    `Fxiaoke CRM(ShareCRM) for Airflow hooks and operators.`__
 
 versions:
   - 0.0.1
