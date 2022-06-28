@@ -11,42 +11,36 @@ from airflow_fxiaoke.hooks.query import FxiaokeHooks
 
 class FxiaokeToGCSOperator(BaseOperator):
     template_fields: Sequence[str] = (
+        'start_ds',
+        'end_ds',
         'bucket',
         'filename',
         'impersonation_chain',
-
     )
 
     def __init__(
         self,
         *,
-        fxiaoke_object_name,
-        fxiaoke_conn_id='fxiaoke_default',
-        start_ms: Union[int, str] = None,
-        end_ms: Union[int, str] = None,
+        fxiaoke_object_name: str,
+        start_ds: str,
+        end_ds: str,
         bucket: str,
         filename: str,
         mime_type: str = 'application/json',
-        gcp_conn_id: str = 'google_cloud_default',
         delegate_to: Optional[str] = None,
         gzip: bool = False,
         impersonation_chain: Optional[Union[str, Sequence[str]]] = None,
         upload_metadata: bool = False,
+        fxiaoke_conn_id='fxiaoke_default',
+        gcp_conn_id: str = 'google_cloud_default',
         **kwargs,
     ):
         super().__init__(**kwargs)
 
         self.fxiaoke_object_name = fxiaoke_object_name
         self.fxiaoke_conn_id = fxiaoke_conn_id
-        if isinstance(start_ms, str):
-            self.start_ms = pendulum.parse(start_ms).int_timestamp()*1000
-        else:
-            self.start_ms = start_ms
-
-        if isinstance(end_ms, str):
-            self.end_ms = pendulum.parse(end_ms).int_timestamp()*1000
-        else:
-            self.end_ms = end_ms
+        self.start_ds = start_ds
+        self.end_ds = end_ds
 
         self.bucket = bucket
         self.filename = filename
@@ -67,8 +61,8 @@ class FxiaokeToGCSOperator(BaseOperator):
         fxk_hook = FxiaokeHooks(self.fxiaoke_conn_id)
         objects_iter = fxk_hook.list_object(
             object_name=self.fxiaoke_object_name,
-            ds_start_ms=self.start_ms,
-            ds_end_ms=self.end_ms
+            ds_start_ms=pendulum.parse(self.start_ds).int_timestamp()*1000,
+            ds_end_ms=pendulum.parse(self.end_ds).int_timestamp()*1000
         )
         for row_dict in objects_iter:
             file_row_count += 1
