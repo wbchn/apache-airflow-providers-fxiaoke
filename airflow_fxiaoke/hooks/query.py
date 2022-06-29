@@ -1,23 +1,20 @@
 """
 Fxiaoke object hooks
 
-create connections with extra json:
-{"app_id":"", "app_secret":"", "permanent_code":"", "open_user_id":""}
+create connections:
+airflow connections add 'fxiaoke_default' \
+    --conn-uri 'fxiaoke://<open_user_id>:<app_secret>@<app_id>:80/<permanent_code>
 """
 import sys
 import time
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-if sys.version_info >= (3, 8):
-    from functools import cached_property
-else:
-    from cached_property import cached_property
-
 from airflow.exceptions import AirflowException
 from airflow.hooks.base import BaseHook
 from fxiaoke.api import FxiaokeApi
-from fxiaoke.query import queryObj as FxiaokeObj
+from fxiaoke.op_query import queryObj as FxiaokeQueryObj
+from fxiaoke.op_get import getObj as FxiaokegetObj
 
 
 class FxiaokeHooks(BaseHook):
@@ -27,9 +24,42 @@ class FxiaokeHooks(BaseHook):
         For more information on the fxiaoke CRM API, take a look at the API docs:
         https://open.fxiaoke.com/wiki.html
     """
+    conn_type = 'fxiaoke'
     conn_name_attr = 'fxiaoke_conn_id'
     default_conn_name = 'fxiaoke_default'
     hook_name = 'Fxiaoke Hooks'
+
+    @staticmethod
+    def get_connection_form_widgets() -> Dict[str, Any]:
+        """Returns connection widgets to add to connection form"""
+        from flask_appbuilder.fieldwidgets import BS3TextFieldWidget
+        from flask_babel import lazy_gettext
+        from wtforms import StringField
+
+        return {
+            "extra__fxiaoke__permanent_code": StringField(
+                lazy_gettext('PermanentCode'), widget=BS3TextFieldWidget()
+            ),
+            "extra__azure__subscriptionId": StringField(
+                lazy_gettext('OpenUserID'), widget=BS3TextFieldWidget()
+            ),
+        }
+
+    @staticmethod
+    def get_ui_field_behaviour() -> Dict[str, Any]:
+        return {
+            "hidden_fields": ["port", "host", "schema"],
+            "relabeling": {
+                "login": "AppID(app_id)",
+                "password": "APPSecret(app_secret)",
+            },
+            "placeholders": {
+                'login': 'generate when create app, format: FSAID_xxxxx',
+                'password': 'generate when create app',
+                'extra__fxiaoke__permanent_code': 'generate when create app',
+                'extra__fxiaoke__open_user_id': 'generate when create app, format: FSUID_xxxxxxxxx',
+            },
+        }
 
     def __init__(
         self,
@@ -39,36 +69,34 @@ class FxiaokeHooks(BaseHook):
         super().__init__()
         self.fxiaoke_conn_id = fxiaoke_conn_id
         self.api_version = api_version
-        self.client_required_fields = [
-            "app_id", "app_secret", "permanent_code", "open_user_id"]
 
-    def _get_service(self) -> FxiaokeApi:
-        """Returns Facebook Ads Client using a service account"""
-        config = self.fxiaoke_config
+    def get_conn(self) -> FxiaokeApi:
+        """Returns service api"""
+        conn = self.get_connection(self.fxiaoke_conn_id)
+        self._validate_connection(conn)
+
+        permanent_code = conn.extra_dejson.get(
+            'extra__fxiaoke__permanent_code') or conn.extra_dejson.get('permanent_code')
+        open_user_id = conn.extra_dejson.get(
+            'extra__fxiaoke__open_user_id') or conn.extra_dejson.get('open_user_id')
+
+        self.log.info(
+            f'Getting connection using user {open_user_id} for app: {conn.login}.')
         return FxiaokeApi.init(
-            app_id=config["app_id"],
-            app_secret=config["app_secret"],
-            permanent_code=config["permanent_code"],
-            open_user_id=config["open_user_id"],
+            app_id=conn.login,
+            app_secret=conn.password,
+            permanent_code=permanent_code,
+            open_user_id=open_user_id,
             api_version=self.api_version,
         )
 
-    @cached_property
-    def fxiaoke_config(self) -> Dict:
-        """
-        Gets Fxiaoke connection from meta db and sets
-        fxiaoke_config attribute with returned config file
-        """
-        self.log.info("Fetching fb connection: %s", self.facebook_conn_id)
-        conn = self.get_connection(self.facebook_conn_id)
-        config = conn.extra_dejson
-        missing_keys = self.client_required_fields - config.keys()
-        if missing_keys:
-            message = f"{missing_keys} fields are missing"
-            raise AirflowException(message)
-        return config
+    def _validate_connection(self, conn: Any) -> None:
+        for conn_param in ['login', 'password']:
+            if not getattr(conn, conn_param):
+                raise AirflowException(
+                    f'missing connection parameter {conn_param}')
 
-    def list_object(
+    def query(
         self,
         object_name: str,
         ds_start_ms: int,
@@ -77,14 +105,27 @@ class FxiaokeHooks(BaseHook):
         offset: int = 0,
         limit: int = 100,
     ) -> iter:
-        api = self._get_service()
-        obj = FxiaokeObj(api)
-        return obj.api_get(
-            dataObjectApiName=object_name, filters=[{
+        api = self.get_conn()
+        query = FxiaokeQueryObj(api)
+        return query.execute(
+            dataObjectApiName=object_name,
+            filters=[{
                 'field_name': filter_fileds,
                 'field_values': [ds_start_ms, ds_end_ms],
                 'operator': 'BETWEEN',
             }],
             limit=limit,
             offset=offset
+        )
+
+    def get(
+        self,
+        object_name: str,
+        object_id: int,
+    ) -> Any:
+        api = self.get_conn()
+        obj = FxiaokegetObj(api)
+        return obj.execute(
+            dataObjectApiName=object_name,
+            objectDataId=object_id
         )

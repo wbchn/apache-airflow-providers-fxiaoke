@@ -4,5 +4,5 @@ def get_provider_info():
         "name": "Fxiaoke Provider", # Required
         "description": "Fxiaoke for airflow providers.", # Required
         "hook-class-names": ["airflow_fxiaoke.hooks.query.FxiaokeHooks"],
-        "versions": ["0.0.1"] # Required
+        "versions": ["0.0.6"] # Required
     }

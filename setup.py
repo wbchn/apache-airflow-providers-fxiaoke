@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 """Perform the package airflow-provider-fxiaoke setup."""
 setup(
     name='airflow-provider-fxiaoke',
-    version="0.0.5",
+    version="0.0.6",
     description='Airflow plugins for fxiaoke CRM(ShareCRM) api.',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -16,8 +16,11 @@ setup(
         ]
     },
     license='Apache License 2.0',
-    packages=['airflow_fxiaoke', 'airflow_fxiaoke.hooks',
-              'airflow_fxiaoke.operators'],
+    packages=find_packages(include=[
+        'airflow_fxiaoke', 
+        'airflow_fxiaoke.hooks',
+              'airflow_fxiaoke.operators'
+              ]),
     install_requires=[
         'apache-airflow>=2.1',
         'fxiaoke-python>=0.0.1',

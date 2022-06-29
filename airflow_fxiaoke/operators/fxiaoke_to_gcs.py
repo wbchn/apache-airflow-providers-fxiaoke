@@ -59,7 +59,7 @@ class FxiaokeToGCSOperator(BaseOperator):
         file_mime_type = self.mime_type or 'application/json'
 
         fxk_hook = FxiaokeHooks(self.fxiaoke_conn_id)
-        objects_iter = fxk_hook.list_object(
+        objects_iter = fxk_hook.query(
             object_name=self.fxiaoke_object_name,
             ds_start_ms=pendulum.parse(self.start_ds).int_timestamp()*1000,
             ds_end_ms=pendulum.parse(self.end_ds).int_timestamp()*1000
