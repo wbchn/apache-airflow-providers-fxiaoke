@@ -1,8 +1,10 @@
+import os
+import yaml
+
+
 def get_provider_info():
-    return {
-        "package-name": "airflow-provider-fxiaoke",
-        "name": "Fxiaoke Provider", # Required
-        "description": "Fxiaoke for airflow providers.", # Required
-        "hook-class-names": ["airflow_fxiaoke.hooks.query.FxiaokeHooks"],
-        "versions": ["0.0.6"] # Required
-    }
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    provider_yaml_path = f'{basedir}/provider.yaml'
+    with open(provider_yaml_path) as yaml_file:
+        provider = yaml.safe_load(yaml_file)
+    return provider

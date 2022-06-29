@@ -1,13 +1,17 @@
 from setuptools import find_packages, setup
 
+from airflow_fxiaoke import get_provider_info
+
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+provider = get_provider_info()
+
 """Perform the package airflow-provider-fxiaoke setup."""
 setup(
-    name='airflow-provider-fxiaoke',
-    version="0.0.6",
-    description='Airflow plugins for fxiaoke CRM(ShareCRM) api.',
+    name=provider['package-name'],
+    version=provider['versions'][0],
+    description=provider['description'],
     long_description=long_description,
     long_description_content_type='text/markdown',
     entry_points={
@@ -17,18 +21,20 @@ setup(
     },
     license='Apache License 2.0',
     packages=find_packages(include=[
-        'airflow_fxiaoke', 
+        'airflow_fxiaoke',
         'airflow_fxiaoke.hooks',
-              'airflow_fxiaoke.operators'
-              ]),
-    install_requires=[
-        'apache-airflow>=2.1',
-        'fxiaoke-python>=0.0.1',
-        'apache-airflow-providers-google>=6.0.0'
-    ],
+        'airflow_fxiaoke.operators'
+    ]),
+    package_data={'airflow_fxiaoke': ['./provider.yaml',]},
+    install_requires=provider['additional-dependencies'],
     setup_requires=['setuptools', 'wheel'],
     author='wbin',
     author_email='wbin.chn@gmail.com',
     url='https://github.com/wbchn/apache-airflow-providers-fxiaoke',
+    classifiers=[
+        "Framework :: Apache Airflow",
+        "Framework :: Apache Airflow :: Provider",
+    ],
+    keywords=['clickhouse', 'airflow', 'providers', 'fxiaoke', 'ShareCRM'],
     python_requires='~=3.8',
 )

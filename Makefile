@@ -13,11 +13,10 @@ clean:
 	@rm -fr */__pycache__
 
 .PHONY: package
-package:
-	@rm -fr build dist .eggs *.egg-info
+package: clean
 	python3 setup.py sdist bdist_wheel
 
 .PHONY: dist
-dist: clean package
+dist: package
 	python3 -m twine check dist/*
 	python3 -m twine upload dist/*

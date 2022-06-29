@@ -27,7 +27,7 @@ class FxiaokeHooks(BaseHook):
     conn_type = 'fxiaoke'
     conn_name_attr = 'fxiaoke_conn_id'
     default_conn_name = 'fxiaoke_default'
-    hook_name = 'Fxiaoke Hooks'
+    hook_name = 'Fxiaoke'
 
     @staticmethod
     def get_connection_form_widgets() -> Dict[str, Any]:
@@ -40,7 +40,7 @@ class FxiaokeHooks(BaseHook):
             "extra__fxiaoke__permanent_code": StringField(
                 lazy_gettext('PermanentCode'), widget=BS3TextFieldWidget()
             ),
-            "extra__azure__subscriptionId": StringField(
+            "extra__fxiaoke__open_user_id": StringField(
                 lazy_gettext('OpenUserID'), widget=BS3TextFieldWidget()
             ),
         }
