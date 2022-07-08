@@ -35,6 +35,6 @@ setup(
         "Framework :: Apache Airflow",
         "Framework :: Apache Airflow :: Provider",
     ],
-    keywords=['clickhouse', 'airflow', 'providers', 'fxiaoke', 'ShareCRM'],
+    keywords=['airflow', 'providers', 'fxiaoke', 'ShareCRM'],
     python_requires='~=3.8',
 )

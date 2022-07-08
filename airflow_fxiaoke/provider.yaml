@@ -6,6 +6,7 @@ description: |
     `Fxiaoke CRM(ShareCRM) for Airflow hooks and operators.`__
 
 versions:
+  - 0.0.8
   - 0.0.7
 
 additional-dependencies:

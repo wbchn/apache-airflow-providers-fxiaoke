@@ -30,7 +30,6 @@ class FxiaokeToGCSOperator(BaseOperator):
         delegate_to: Optional[str] = None,
         gzip: bool = False,
         impersonation_chain: Optional[Union[str, Sequence[str]]] = None,
-        upload_metadata: bool = False,
         fxiaoke_conn_id='fxiaoke_default',
         gcp_conn_id: str = 'google_cloud_default',
         **kwargs,
@@ -49,7 +48,6 @@ class FxiaokeToGCSOperator(BaseOperator):
         self.delegate_to = delegate_to
         self.gzip = gzip
         self.impersonation_chain = impersonation_chain
-        self.upload_metadata = upload_metadata
 
     def execute(self, context: 'Context'):
         """Uploads a file or list of files to Google Cloud Storage"""
@@ -61,8 +59,8 @@ class FxiaokeToGCSOperator(BaseOperator):
         fxk_hook = FxiaokeHooks(self.fxiaoke_conn_id)
         objects_iter = fxk_hook.query(
             object_name=self.fxiaoke_object_name,
-            ds_start_ms=pendulum.parse(self.start_ds).int_timestamp()*1000,
-            ds_end_ms=pendulum.parse(self.end_ds).int_timestamp()*1000
+            ds_start_ms=pendulum.parse(self.start_ds).int_timestamp*1000,
+            ds_end_ms=pendulum.parse(self.end_ds).int_timestamp*1000
         )
         for row_dict in objects_iter:
             file_row_count += 1
@@ -77,10 +75,6 @@ class FxiaokeToGCSOperator(BaseOperator):
         tmp_file_handle.flush()
         self.log.info('Uploading chunk file to GCS.')
 
-        metadata = None
-        if self.upload_metadata:
-            metadata = {'row_count': file_row_count}
-
         hook = GCSHook(
             gcp_conn_id=self.gcp_conn_id,
             delegate_to=self.delegate_to,
@@ -92,7 +86,6 @@ class FxiaokeToGCSOperator(BaseOperator):
             tmp_file_handle.name,
             mime_type=file_mime_type,
             gzip=self.gzip,
-            metadata=metadata,
         )
         tmp_file_handle.close()
 
