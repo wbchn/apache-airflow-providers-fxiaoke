@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional, Union
 from airflow.exceptions import AirflowException
 from airflow.hooks.base import BaseHook
 from fxiaoke.api import FxiaokeApi
+from fxiaoke.baseObj import baseObj as FxiaokeBaseObj
 from fxiaoke.op_query import queryObj as FxiaokeQueryObj
 from fxiaoke.op_get import getObj as FxiaokegetObj
 
@@ -129,3 +130,11 @@ class FxiaokeHooks(BaseHook):
             dataObjectApiName=object_name,
             objectDataId=object_id
         )
+
+    def describe(
+        self,
+        object_name: str,
+    ) -> Any:
+        api = self.get_conn()
+        obj = FxiaokeBaseObj(api, dataObjectApiName=object_name)
+        return obj.describe()

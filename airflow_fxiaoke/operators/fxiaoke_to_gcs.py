@@ -30,6 +30,7 @@ class FxiaokeToGCSOperator(BaseOperator):
         delegate_to: Optional[str] = None,
         gzip: bool = False,
         impersonation_chain: Optional[Union[str, Sequence[str]]] = None,
+        skip_if_no_data: bool = True,
         fxiaoke_conn_id='fxiaoke_default',
         gcp_conn_id: str = 'google_cloud_default',
         **kwargs,
@@ -40,6 +41,8 @@ class FxiaokeToGCSOperator(BaseOperator):
         self.fxiaoke_conn_id = fxiaoke_conn_id
         self.start_ds = start_ds
         self.end_ds = end_ds
+
+        self.skip_if_no_data = skip_if_no_data
 
         self.bucket = bucket
         self.filename = filename
@@ -75,18 +78,19 @@ class FxiaokeToGCSOperator(BaseOperator):
         tmp_file_handle.flush()
         self.log.info('Uploading chunk file to GCS.')
 
-        hook = GCSHook(
-            gcp_conn_id=self.gcp_conn_id,
-            delegate_to=self.delegate_to,
-            impersonation_chain=self.impersonation_chain,
-        )
-        hook.upload(
-            self.bucket,
-            self.filename,
-            tmp_file_handle.name,
-            mime_type=file_mime_type,
-            gzip=self.gzip,
-        )
+        if file_row_count > 0 or not self.skip_if_no_data:
+            hook = GCSHook(
+                gcp_conn_id=self.gcp_conn_id,
+                delegate_to=self.delegate_to,
+                impersonation_chain=self.impersonation_chain,
+            )
+            hook.upload(
+                self.bucket,
+                self.filename,
+                tmp_file_handle.name,
+                mime_type=file_mime_type,
+                gzip=self.gzip,
+            )
         tmp_file_handle.close()
 
         file_meta = {
